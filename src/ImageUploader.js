@@ -1,10 +1,50 @@
 import { Button } from "@mui/material";
-import React from "react";
+import React, { useState } from "react";
 import ImageLogo from "./image.svg";
 import "./ImageUpload.css";
+import storage from "./firebase";
+import {
+  getDownloadURL,
+   ref,
+   uploadBytes,
+  uploadBytesResumable,
+  } from "firebase/storage";
 
 const ImageUploader = () => {
+  const [loading, setLoading] = useState(false);
+  const [isUploaded, setIsUploaded] = useState(false);
+
+  const OnFileUploadToFirebase = (e) => {
+    const file = e.target.files[0];
+    console.log("アップロード処理");
+    const storageRef = ref(storage, "image/" + file.name);
+   //"file comes from FileAPI(file)
+   const uploadImage = uploadBytesResumable(storageRef, file);
+   uploadImage.on(
+    "state_changed",
+    (snapshot) => {
+      setLoading(true);
+    },
+    (err) => {
+      console.log(err);
+    },
+    () => {
+      setLoading(false);
+      setIsUploaded(true);
+    }
+  );
+  };
+
   return (
+    <>
+      {loading ? (
+        //Loadingコンポーネント作成
+        <h2> loading中・・・</h2>
+      ) : (
+        <>
+          {isUploaded ? (
+            <h2>アップロードに成功しました！</h2>
+          ) : (
     <div className="outerBox">
       <div className="title">
         <h2>画像アップローダー</h2>
@@ -15,14 +55,29 @@ const ImageUploader = () => {
           <img src={ImageLogo} alt="imagelogo" />
           <p>ここにドラッグ＆ドロップしてね</p>
         </div>
-        <input className="imageUploadInput" multiple name="imageURL" />
+        <input 
+        type="file" 
+        className="imageUploadInput" 
+        multiple 
+        name="imageURL" 
+        accept=".png, .jpeg, .jpg"
+        onChange={OnFileUploadToFirebase}
+        />
       </div>
       <p>または</p>
       <Button variant="contained">
         ファイルを選択
-        <input className="imageUploadInput" />
+        <input 
+        type="file" 
+        className="imageUploadInput" 
+        onChange={OnFileUploadToFirebase}
+        />
       </Button>
     </div>
+    )}
+    </>
+  )}
+</>
   );
 };
 
